@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+        <groupId>codemining</groupId>
+        <artifactId>codemining-all</artifactId>
+        <version>1.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>commitmining-tools</artifactId>
+  <name>Commit Mining Tools</name>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+	<groupId>org.eclipse.jgit</groupId>
+	<artifactId>org.eclipse.jgit</artifactId>
+	<version>3.1.0.201310021548-r</version>
+    </dependency>
+    <dependency>
+      <groupId>codemining</groupId>
+      <artifactId>codemining-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>
