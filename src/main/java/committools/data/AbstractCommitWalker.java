@@ -24,8 +24,12 @@ import org.eclipse.jgit.revwalk.RevCommit;
  */
 public abstract class AbstractCommitWalker {
 
+	/**
+	 * The strategy to use to walk through the a list of commits of a Git
+	 * repository.
+	 */
 	public interface ICommitWalkingStrategy {
-		public List<RevCommit> getWalk(final Git git) throws Exception;
+		List<RevCommit> getWalk(final Git git) throws Exception;
 	}
 
 	/**

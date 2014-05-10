@@ -72,9 +72,9 @@ public abstract class EditListWalker extends AbstractCommitWalker {
 		final EditList el = MyersDiff.INSTANCE.diff(
 				RawTextComparator.WS_IGNORE_ALL,
 				parentObj.length > 0 ? new RawText(parentObj)
-						: org.eclipse.jgit.diff.RawText.EMPTY_TEXT,
+						: RawText.EMPTY_TEXT,
 				currentObj.length > 0 ? new RawText(currentObj)
-						: org.eclipse.jgit.diff.RawText.EMPTY_TEXT);
+						: RawText.EMPTY_TEXT);
 		return el;
 	}
 
