@@ -131,6 +131,7 @@ public class LineLifecycle {
 	public static void main(final String[] args) throws IOException {
 		if (args.length < 1) {
 			System.err.println("Usage <repositoryDir>");
+			System.exit(-1);
 		}
 		final LineLifecycle lc = new LineLifecycle(args[0]);
 		lc.calculateLifecycle();

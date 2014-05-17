@@ -120,7 +120,7 @@ public abstract class EditListWalker extends AbstractCommitWalker {
 			final EditList el, final RevCommit commit) throws IOException;
 
 	@Override
-	public boolean vistCommit(final RevCommit commit) {
+	public final boolean vistCommit(final RevCommit commit) {
 		try {
 			final RevCommit[] parents = commit.getParents();
 			if (parents.length == 1) { // TODO Forget merges
