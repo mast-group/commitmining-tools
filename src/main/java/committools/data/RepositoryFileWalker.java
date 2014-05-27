@@ -26,6 +26,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
  * This class handles Git checkouts gracefully and terminating its thread is
  * delayed until the repository is restored to the initial state.
  * 
+ * Override visitCommitFiles to implement a visitor. When the visitor is called
+ * a the state of the repositoryDir is at the given commit. Optionally, override
+ * isVisitableCommit to specify which commits will be visited.
+ * 
  * @author Miltos Allamanis <m.allamanis@ed.ac.uk>
  * 
  */
@@ -104,6 +108,17 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 	}
 
 	/**
+	 * Returns true if the given commit will be visited. Override this method to
+	 * specify which commits will be visited.
+	 * 
+	 * @param commit
+	 * @return
+	 */
+	public boolean isVisitableCommit(final RevCommit commit) {
+		return true;
+	}
+
+	/**
 	 * Switch to the main branch and delete the temporary branch.
 	 * 
 	 * @throws GitAPIException
@@ -144,15 +159,16 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 		}
 
 		try {
+			if (isVisitableCommit(commit)) {
+				deleteTestBranchIfExists();
+				repository.checkout().setCreateBranch(true)
+						.setName(TEMPORARY_BRANCH_NAME).setStartPoint(commit)
+						.call();
 
-			deleteTestBranchIfExists();
-			repository.checkout().setCreateBranch(true)
-					.setName(TEMPORARY_BRANCH_NAME).setStartPoint(commit)
-					.call();
+				visitCommitFiles(commit);
 
-			visitCommitFiles(commit);
-
-			switchToMainAndDeleteFrom(TEMPORARY_BRANCH_NAME);
+				switchToMainAndDeleteFrom(TEMPORARY_BRANCH_NAME);
+			}
 		} catch (final Throwable e) {
 			LOGGER.warning(ExceptionUtils.getFullStackTrace(e));
 		}
