@@ -150,8 +150,7 @@ public abstract class EditListWalker extends AbstractCommitWalker {
 
 	@Override
 	public void walkCompleted() {
-		// TODO Auto-generated method stub
-
+		// Nothing here. May be overriden.
 	}
 
 }
