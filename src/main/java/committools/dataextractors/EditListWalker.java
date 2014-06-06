@@ -3,15 +3,19 @@
  */
 package committools.dataextractors;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.EditList;
 import org.eclipse.jgit.diff.MyersDiff;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RawTextComparator;
+import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.LargeObjectException;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -26,7 +30,10 @@ import org.eclipse.jgit.util.io.DisabledOutputStream;
 import committools.data.AbstractCommitWalker;
 
 /**
- * Walk through the EditLists of a repository.
+ * Walk through the EditLists of a repository. Merge renamings if possible.
+ * 
+ * For historical reasons the default constructor creates a walker that only
+ * looks at java file.
  * 
  * @author Miltos Allamanis <m.allamanis@ed.ac.uk>
  * 
@@ -35,11 +42,28 @@ public abstract class EditListWalker extends AbstractCommitWalker {
 
 	final DiffFormatter df = new DiffFormatter(DisabledOutputStream.INSTANCE);
 
+	private final IOFileFilter editListFileFilter;
+
+	private final RenameDetector renameDetector;
+
+	@Deprecated
 	public EditListWalker(final String repositoryDirectory) throws IOException {
 		super(repositoryDirectory, AbstractCommitWalker.TOPOLOGICAL_WALK);
 		df.setRepository(repository.getRepository());
 		df.setDiffComparator(RawTextComparator.WS_IGNORE_ALL);
 		df.setDetectRenames(true);
+		renameDetector = new RenameDetector(repository.getRepository());
+		editListFileFilter = new SuffixFileFilter(".java");
+	}
+
+	public EditListWalker(final String repositoryDirectory,
+			final IOFileFilter fileFilter) throws IOException {
+		super(repositoryDirectory, AbstractCommitWalker.TOPOLOGICAL_WALK);
+		df.setRepository(repository.getRepository());
+		df.setDiffComparator(RawTextComparator.WS_IGNORE_ALL);
+		renameDetector = new RenameDetector(repository.getRepository());
+		df.setDetectRenames(true);
+		editListFileFilter = fileFilter;
 	}
 
 	/**
@@ -123,15 +147,21 @@ public abstract class EditListWalker extends AbstractCommitWalker {
 	public final boolean vistCommit(final RevCommit commit) {
 		try {
 			final RevCommit[] parents = commit.getParents();
-			if (parents.length == 1) { // TODO Forget merges
+			if (parents.length == 1) { // TODO Forget merges?
 				final RevCommit parent = parents[0];
 
 				final List<DiffEntry> diffs = repository.diff()
 						.setNewTree(getTreeIterator(commit.name()))
 						.setOldTree(getTreeIterator(parent.name())).call();
 
-				for (final DiffEntry entry : diffs) {
-					if (!entry.getNewPath().endsWith(".java")) {
+				renameDetector.reset();
+				renameDetector.addAll(diffs);
+
+				for (final DiffEntry entry : renameDetector.compute()) {
+					if (!editListFileFilter
+							.accept(new File(entry.getNewPath()))
+							&& !editListFileFilter.accept(new File(entry
+									.getOldPath()))) {
 						continue;
 					}
 
