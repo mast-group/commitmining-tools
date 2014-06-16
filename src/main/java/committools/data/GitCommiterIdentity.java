@@ -1,5 +1,7 @@
 package committools.data;
 
+import java.io.Serializable;
+
 import org.eclipse.jgit.lib.PersonIdent;
 
 import com.google.common.base.Objects;
@@ -11,7 +13,9 @@ import com.google.common.base.Objects;
  * @author Miltos Allamanis <m.allamanis@ed.ac.uk>
  * 
  */
-public final class GitCommiterIdentity {
+public final class GitCommiterIdentity implements Serializable {
+
+	private static final long serialVersionUID = -3880389858550759188L;
 
 	public final String name;
 
