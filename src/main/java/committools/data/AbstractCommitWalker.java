@@ -82,18 +82,24 @@ public abstract class AbstractCommitWalker {
 	}
 
 	public void doWalk() {
-		doWalk(Integer.MAX_VALUE);
+		doWalk(0, Integer.MAX_VALUE);
 	}
 
-	public void doWalk(final int commitLimit) {
+	public void doWalk(final int nCommits) {
+		doWalk(0, nCommits);
+	}
+
+	public void doWalk(final int startFrom, final int nCommits) {
 		try {
 			final List<RevCommit> allCommits = commitWalkingStrategy
 					.getWalk(repository);
 
 			int iteration = 0;
 			for (final RevCommit commit : allCommits) {
-				if (!vistCommit(commit) || iteration > commitLimit) {
-					break;
+				if (iteration > startFrom) {
+					if (!vistCommit(commit) || iteration > startFrom + nCommits) {
+						break;
+					}
 				}
 				iteration++;
 			}
