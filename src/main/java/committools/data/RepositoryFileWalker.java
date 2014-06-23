@@ -164,10 +164,11 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 				repository.checkout().setCreateBranch(true)
 						.setName(TEMPORARY_BRANCH_NAME).setStartPoint(commit)
 						.call();
-
-				visitCommitFiles(commit);
-
-				switchToMainAndDeleteFrom(TEMPORARY_BRANCH_NAME);
+				try {
+					visitCommitFiles(commit);
+				} finally {
+					switchToMainAndDeleteFrom(TEMPORARY_BRANCH_NAME);
+				}
 			}
 		} catch (final Throwable e) {
 			LOGGER.warning(ExceptionUtils.getFullStackTrace(e));
