@@ -96,8 +96,8 @@ public abstract class AbstractCommitWalker {
 
 			int iteration = 0;
 			for (final RevCommit commit : allCommits) {
-				if (iteration > startFrom) {
-					if (!vistCommit(commit) || iteration > startFrom + nCommits) {
+				if (iteration >= startFrom) {
+					if (iteration > startFrom + nCommits || !vistCommit(commit)) {
 						break;
 					}
 				}
