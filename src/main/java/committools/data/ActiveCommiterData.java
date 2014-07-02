@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -106,7 +107,7 @@ public class ActiveCommiterData {
 	 * @throws NoHeadException
 	 */
 	public static void main(final String[] args) throws NoHeadException,
-			IOException, GitAPIException {
+	IOException, GitAPIException {
 		if (args.length != 2) {
 			System.err.println("Usage single|multiple <directory>");
 			System.exit(-1);
@@ -124,13 +125,14 @@ public class ActiveCommiterData {
 					final ActiveCommiterData acd = new ActiveCommiterData();
 					acd.buildData(project.getAbsolutePath());
 					System.out
-							.println(project.getName()
-									+ ","
-									+ String.format("%.4f",
-											acd.getLastActivityRatio()));
+					.println(project.getName()
+							+ ","
+							+ String.format("%.4f",
+									acd.getLastActivityRatio()));
 				} catch (Throwable e) {
 					LOGGER.warning("Failed to extract information for "
-							+ project);
+							+ project + " because "
+							+ ExceptionUtils.getFullStackTrace(e));
 				}
 			}
 		} else {
@@ -147,7 +149,7 @@ public class ActiveCommiterData {
 	final RangeMap<Integer, Integer> numActiveCommiters = TreeRangeMap.create();
 
 	public void buildData(final String gitDirectory) throws NoHeadException,
-	IOException, GitAPIException {
+			IOException, GitAPIException {
 		final SortedMap<Integer, RevCommit> allCommits = GitCommitUtils
 				.getCommitsWithTime(GitCommitUtils
 						.getGitRepository(gitDirectory));
