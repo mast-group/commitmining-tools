@@ -88,7 +88,7 @@ public class ActiveCommiterData {
 			}
 		}
 
-		// Post-process, giving a grace time of the last 50 days
+		// Post-process, giving a grace time of activeGracePeriod
 		final int graceTime = maxTime - activeGracePeriod;
 		for (final Map.Entry<GitCommiterIdentity, Range<Integer>> entry : commitRanges
 				.entrySet()) {
@@ -124,11 +124,9 @@ public class ActiveCommiterData {
 				try {
 					final ActiveCommiterData acd = new ActiveCommiterData();
 					acd.buildData(project.getAbsolutePath());
-					System.out
-					.println(project.getName()
-							+ ","
-							+ String.format("%.4f",
-									acd.getLastActivityRatio()));
+					System.out.println(project.getName() + ","
+							+ String.format("%.4f", acd.getLastActivityRatio())
+							+ "," + acd.getLastNumOfActiveCommiters());
 				} catch (Throwable e) {
 					LOGGER.warning("Failed to extract information for "
 							+ project + " because "
@@ -144,7 +142,7 @@ public class ActiveCommiterData {
 	private static final Logger LOGGER = Logger
 			.getLogger(ActiveCommiterData.class.getName());
 
-	private static final int FOUR_MONTHS = 60 * 60 * 24 * 30 * 4;
+	private static final int GRACE_PERIOD = 60 * 60 * 24 * 30 * 4;
 
 	final RangeMap<Integer, Integer> numActiveCommiters = TreeRangeMap.create();
 
@@ -158,16 +156,16 @@ public class ActiveCommiterData {
 				allCommits.lastKey());
 
 		final Map<GitCommiterIdentity, Range<Integer>> commitTimeRanges = getCommitActivityTimePerUser(
-				allCommits, FOUR_MONTHS);
+				allCommits, GRACE_PERIOD);
 
 		// Split period into 6 months chunks
 		final int nChunks = (int) Math.ceil(((double) activityPeriod
 				.upperEndpoint() - activityPeriod.lowerEndpoint())
-				/ FOUR_MONTHS);
+				/ GRACE_PERIOD);
 
 		for (int i = 0; i < nChunks; i++) {
 			final Range<Integer> currentPeriod = Range.closedOpen(startTime + i
-					* FOUR_MONTHS, startTime + (i + 1) * FOUR_MONTHS);
+					* GRACE_PERIOD, startTime + (i + 1) * GRACE_PERIOD);
 			int nActiveCommiters = 0;
 			for (final Range<Integer> userActivityPeriod : commitTimeRanges
 					.values()) {
@@ -187,9 +185,14 @@ public class ActiveCommiterData {
 				max = activeCommiters;
 			}
 		}
+		final int nowActiveCommiters = getLastNumOfActiveCommiters();
+		return ((double) nowActiveCommiters) / max;
+	}
+
+	public int getLastNumOfActiveCommiters() {
 		final int nowActiveCommiters = numActiveCommiters
 				.get(numActiveCommiters.span().upperEndpoint() - 1);
-		return ((double) nowActiveCommiters) / max;
+		return nowActiveCommiters;
 	}
 
 	public void printTimeSeries() {
