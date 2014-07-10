@@ -107,7 +107,7 @@ public class ActiveCommiterData {
 	 * @throws NoHeadException
 	 */
 	public static void main(final String[] args) throws NoHeadException,
-	IOException, GitAPIException {
+			IOException, GitAPIException {
 		if (args.length != 2) {
 			System.err.println("Usage single|multiple <directory>");
 			System.exit(-1);
@@ -142,12 +142,12 @@ public class ActiveCommiterData {
 	private static final Logger LOGGER = Logger
 			.getLogger(ActiveCommiterData.class.getName());
 
-	private static final int GRACE_PERIOD = 60 * 60 * 24 * 30 * 4;
+	private static final int GRACE_PERIOD = 60 * 60 * 24 * 30 * 6;
 
 	final RangeMap<Integer, Integer> numActiveCommiters = TreeRangeMap.create();
 
 	public void buildData(final String gitDirectory) throws NoHeadException,
-			IOException, GitAPIException {
+	IOException, GitAPIException {
 		final SortedMap<Integer, RevCommit> allCommits = GitCommitUtils
 				.getCommitsWithTime(GitCommitUtils
 						.getGitRepository(gitDirectory));
