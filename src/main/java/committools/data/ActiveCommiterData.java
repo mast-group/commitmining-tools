@@ -7,8 +7,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.logging.Logger;
@@ -30,27 +28,6 @@ import com.google.common.collect.TreeRangeMap;
  *
  */
 public class ActiveCommiterData {
-
-	private static class CommiterData {
-		final Range<Integer> commitRange;
-		final double maxTimeBetweenCommits;
-
-		public CommiterData(final List<Integer> commitTimes) {
-			checkArgument(!commitTimes.isEmpty());
-			Collections.sort(commitTimes);
-			final int startTime = commitTimes.get(0);
-			final int stopTime = commitTimes.get(commitTimes.size() - 1);
-			commitRange = Range.closed(startTime, stopTime);
-			int maxGap = 0;
-			for (int i = 1; i < commitTimes.size(); i++) {
-				final int gap = commitTimes.get(i) - commitTimes.get(i - 1);
-				if (gap > maxGap) {
-					maxGap = gap;
-				}
-			}
-			maxTimeBetweenCommits = maxGap;
-		}
-	}
 
 	/**
 	 * Return a map with the last commit of each user giving a grace period
@@ -107,7 +84,7 @@ public class ActiveCommiterData {
 	 * @throws NoHeadException
 	 */
 	public static void main(final String[] args) throws NoHeadException,
-			IOException, GitAPIException {
+	IOException, GitAPIException {
 		if (args.length != 2) {
 			System.err.println("Usage single|multiple <directory>");
 			System.exit(-1);
@@ -118,7 +95,7 @@ public class ActiveCommiterData {
 			acd.printTimeSeries();
 			System.out.println("Activity Ratio: " + acd.getLastActivityRatio());
 		} else if (args[0].equals("multiple")) {
-			File projectsDir = new File(args[1]);
+			final File projectsDir = new File(args[1]);
 			checkArgument(projectsDir.isDirectory());
 			for (final File project : projectsDir.listFiles()) {
 				try {
@@ -127,7 +104,7 @@ public class ActiveCommiterData {
 					System.out.println(project.getName() + ","
 							+ String.format("%.4f", acd.getLastActivityRatio())
 							+ "," + acd.getLastNumOfActiveCommiters());
-				} catch (Throwable e) {
+				} catch (final Throwable e) {
 					LOGGER.warning("Failed to extract information for "
 							+ project + " because "
 							+ ExceptionUtils.getFullStackTrace(e));
@@ -147,7 +124,7 @@ public class ActiveCommiterData {
 	final RangeMap<Integer, Integer> numActiveCommiters = TreeRangeMap.create();
 
 	public void buildData(final String gitDirectory) throws NoHeadException,
-	IOException, GitAPIException {
+			IOException, GitAPIException {
 		final SortedMap<Integer, RevCommit> allCommits = GitCommitUtils
 				.getCommitsWithTime(GitCommitUtils
 						.getGitRepository(gitDirectory));
