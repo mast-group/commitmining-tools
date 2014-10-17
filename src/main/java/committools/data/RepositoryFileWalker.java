@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package committools.data;
 
@@ -22,22 +22,22 @@ import org.eclipse.jgit.revwalk.RevCommit;
 /**
  * A special commit walker that visits the commits one-by-one, changing the
  * working tree (files) on the fly.
- * 
+ *
  * This class handles Git checkouts gracefully and terminating its thread is
  * delayed until the repository is restored to the initial state.
- * 
+ *
  * Override visitCommitFiles to implement a visitor. When the visitor is called
  * a the state of the repositoryDir is at the given commit. Optionally, override
  * isVisitableCommit to specify which commits will be visited.
- * 
+ *
  * @author Miltos Allamanis <m.allamanis@ed.ac.uk>
- * 
+ *
  */
 public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 
 	/**
 	 * Handle a TERM signal by gracefully allowing the walker to exit.
-	 * 
+	 *
 	 */
 	public class TermHandler extends Thread {
 		@Override
@@ -56,7 +56,7 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 		}
 	}
 
-	public static final String TEMPORARY_BRANCH_NAME = "test";
+	public static final String TEMPORARY_BRANCH_NAME = "temporary_branch_usedby_RepositoryFileWalker";
 
 	private static final Logger LOGGER = Logger
 			.getLogger(RepositoryFileWalker.class.getName());
@@ -110,7 +110,7 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 	/**
 	 * Returns true if the given commit will be visited. Override this method to
 	 * specify which commits will be visited.
-	 * 
+	 *
 	 * @param commit
 	 * @return
 	 */
@@ -120,7 +120,7 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 
 	/**
 	 * Switch to the main branch and delete the temporary branch.
-	 * 
+	 *
 	 * @throws GitAPIException
 	 * @throws RefAlreadyExistsException
 	 * @throws RefNotFoundException
@@ -136,13 +136,14 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 			CannotDeleteCurrentBranchException {
 		repository.checkout().setCreateBranch(false).setName(mainBranchName)
 				.call();
-		repository.branchDelete().setBranchNames(tempBranch).call();
+		repository.branchDelete().setForce(true).setBranchNames(tempBranch)
+		.call();
 	}
 
 	/**
 	 * Visit the specified commit. When the function is called the working tree
 	 * (files in the directory) will have been changed according to that commit.
-	 * 
+	 *
 	 * @param commit
 	 * @throws ClassNotFoundException
 	 * @throws InstantiationException
