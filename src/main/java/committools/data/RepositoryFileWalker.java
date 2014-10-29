@@ -10,6 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.CannotDeleteCurrentBranchException;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -134,10 +135,21 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 			RefNotFoundException, InvalidRefNameException,
 			CheckoutConflictException, NotMergedException,
 			CannotDeleteCurrentBranchException {
-		repository.checkout().setCreateBranch(false).setName(mainBranchName)
-				.call();
-		repository.branchDelete().setForce(true).setBranchNames(tempBranch)
-		.call();
+		try {
+			repository.reset().setMode(ResetType.HARD).call();
+		} finally {
+			try {
+				repository.checkout().setCreateBranch(false)
+						.setName(mainBranchName).setForce(true).call();
+			} finally {
+				try {
+					repository.reset().setMode(ResetType.HARD).call();
+				} finally {
+					repository.branchDelete().setForce(true)
+							.setBranchNames(tempBranch).call();
+				}
+			}
+		}
 	}
 
 	/**
@@ -163,8 +175,8 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 			if (isVisitableCommit(commit)) {
 				deleteTestBranchIfExists();
 				repository.checkout().setCreateBranch(true)
-						.setName(TEMPORARY_BRANCH_NAME).setStartPoint(commit)
-						.call();
+				.setName(TEMPORARY_BRANCH_NAME).setStartPoint(commit)
+						.setForce(true).call();
 				try {
 					visitCommitFiles(commit);
 				} finally {
