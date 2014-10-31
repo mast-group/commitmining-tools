@@ -31,6 +31,16 @@ import org.eclipse.jgit.revwalk.RevCommit;
  * a the state of the repositoryDir is at the given commit. Optionally, override
  * isVisitableCommit to specify which commits will be visited.
  *
+ * Note that JGit does not work well with symlinks. This means that exceptions
+ * with checkout of various versions may be thrown. In case this happens, you
+ * need to set to the given repository in .git/config in the [core] settings
+ *
+ * symlink = false
+ *
+ * then you need to make sure that all symlinks are removed. You may do that, by
+ * checking out a new branch, setting it to a very old (e.g. the first) commit
+ * and then checking out the master branch.
+ *
  * @author Miltos Allamanis <m.allamanis@ed.ac.uk>
  *
  */
@@ -57,7 +67,7 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 		}
 	}
 
-	public static final String TEMPORARY_BRANCH_NAME = "temporary_branch_usedby_RepositoryFileWalker";
+	public static final String TEMPORARY_BRANCH_NAME = "temporaryBranchUsedbyRepositoryFileWalker";
 
 	private static final Logger LOGGER = Logger
 			.getLogger(RepositoryFileWalker.class.getName());
@@ -90,21 +100,35 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 
 	@Override
 	public void doWalk() {
-		final TermHandler termSignalHandler = new TermHandler();
-		Runtime.getRuntime().addShutdownHook(termSignalHandler);
-		super.doWalk();
-		if (!terminating) { // if we are not already shutting down
-			Runtime.getRuntime().removeShutdownHook(termSignalHandler);
+		try {
+			deleteTestBranchIfExists();
+			repository.checkout().setCreateBranch(true).setForce(true)
+			.setName(TEMPORARY_BRANCH_NAME).call();
+			final TermHandler termSignalHandler = new TermHandler();
+			Runtime.getRuntime().addShutdownHook(termSignalHandler);
+			super.doWalk();
+			if (!terminating) { // if we are not already shutting down
+				Runtime.getRuntime().removeShutdownHook(termSignalHandler);
+			}
+		} catch (final GitAPIException e) {
+			LOGGER.severe(ExceptionUtils.getFullStackTrace(e));
 		}
 	}
 
 	@Override
 	public void doWalk(final int iterationLimit) {
-		final TermHandler termSignalHandler = new TermHandler();
-		Runtime.getRuntime().addShutdownHook(termSignalHandler);
-		super.doWalk(iterationLimit);
-		if (!terminating) { // if we are not already shutting down
-			Runtime.getRuntime().removeShutdownHook(termSignalHandler);
+		try {
+			deleteTestBranchIfExists();
+			repository.checkout().setCreateBranch(true).setForce(true)
+			.setName(TEMPORARY_BRANCH_NAME).call();
+			final TermHandler termSignalHandler = new TermHandler();
+			Runtime.getRuntime().addShutdownHook(termSignalHandler);
+			super.doWalk(iterationLimit);
+			if (!terminating) { // if we are not already shutting down
+				Runtime.getRuntime().removeShutdownHook(termSignalHandler);
+			}
+		} catch (final GitAPIException e) {
+			LOGGER.severe(ExceptionUtils.getFullStackTrace(e));
 		}
 	}
 
@@ -140,13 +164,13 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 		} finally {
 			try {
 				repository.checkout().setCreateBranch(false)
-						.setName(mainBranchName).setForce(true).call();
+				.setName(mainBranchName).setForce(true).call();
 			} finally {
 				try {
 					repository.reset().setMode(ResetType.HARD).call();
 				} finally {
 					repository.branchDelete().setForce(true)
-							.setBranchNames(tempBranch).call();
+					.setBranchNames(tempBranch).call();
 				}
 			}
 		}
@@ -173,15 +197,9 @@ public abstract class RepositoryFileWalker extends AbstractCommitWalker {
 
 		try {
 			if (isVisitableCommit(commit)) {
-				deleteTestBranchIfExists();
-				repository.checkout().setCreateBranch(true)
-				.setName(TEMPORARY_BRANCH_NAME).setStartPoint(commit)
-						.setForce(true).call();
-				try {
-					visitCommitFiles(commit);
-				} finally {
-					switchToMainAndDeleteFrom(TEMPORARY_BRANCH_NAME);
-				}
+				repository.reset().setMode(ResetType.HARD)
+						.setRef(commit.name());
+				visitCommitFiles(commit);
 			}
 		} catch (final Throwable e) {
 			LOGGER.warning(ExceptionUtils.getFullStackTrace(e));
