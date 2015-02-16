@@ -26,24 +26,27 @@ import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 
+import com.google.common.collect.Lists;
+
 /**
- * 
+ *
  * Given two commit objects, retrieve the diff and entry list between the two
  * commits. The class also detects renamings.
- * 
+ *
  * @author Miltos Allamanis <m.allamanis@ed.ac.uk>
- * 
+ *
  */
 public class EditListRetriever {
 
 	public interface IEditListCallback {
-		public void visitDiffEntry(final DiffEntry entry, final EditList editList,
-				final RevCommit commit) throws IOException;
+		public void visitDiffEntry(final DiffEntry entry,
+				final EditList editList, final RevCommit commit)
+				throws IOException;
 	}
 
 	/**
 	 * Get the line change churn for the given edit list.
-	 * 
+	 *
 	 * @param editList
 	 * @return
 	 */
@@ -71,7 +74,7 @@ public class EditListRetriever {
 	private final Git repository;
 
 	/**
-	 * 
+	 *
 	 * @param repository
 	 *            the git repository to use
 	 * @param fileFilter
@@ -147,9 +150,34 @@ public class EditListRetriever {
 		}
 	}
 
+	public List<EditList> retrieveEditListBetween(final RevCommit to,
+			final RevCommit from) throws GitAPIException, IOException,
+			LargeObjectException, MissingObjectException,
+			IncorrectObjectTypeException {
+		final List<DiffEntry> diffs = repository.diff()
+				.setNewTree(getTreeIterator(to.name()))
+				.setOldTree(getTreeIterator(from.name())).call();
+
+		renameDetector.reset();
+		renameDetector.addAll(diffs);
+
+		final List<EditList> edits = Lists.newArrayList();
+		for (final DiffEntry entry : renameDetector.compute()) {
+			if (!editListFileFilter.accept(new File(entry.getNewPath()))
+					&& !editListFileFilter.accept(new File(entry.getOldPath()))) {
+				continue;
+			}
+
+			final EditList el = getEditList(entry);
+
+			edits.add(el);
+		}
+		return edits;
+	}
+
 	/**
 	 * Retrieve the edit list between the two commits.
-	 * 
+	 *
 	 * @param to
 	 * @param from
 	 * @throws GitAPIException
