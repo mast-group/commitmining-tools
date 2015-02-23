@@ -3,8 +3,10 @@ package committools.data;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -63,6 +65,9 @@ public class EditListRetriever {
 		}
 		return lineChurn;
 	}
+
+	private static final Logger LOGGER = Logger
+			.getLogger(EditListRetriever.class.getName());
 
 	private final DiffFormatter df = new DiffFormatter(
 			DisabledOutputStream.INSTANCE);
@@ -198,15 +203,20 @@ public class EditListRetriever {
 		renameDetector.addAll(diffs);
 
 		for (final DiffEntry entry : renameDetector.compute()) {
-			if (!editListFileFilter.accept(new File(entry.getNewPath()))
-					&& !editListFileFilter.accept(new File(entry.getOldPath()))) {
-				continue;
+			try {
+				if (!editListFileFilter.accept(new File(entry.getNewPath()))
+						&& !editListFileFilter.accept(new File(entry
+								.getOldPath()))) {
+					continue;
+				}
+
+				final EditList el = getEditList(entry);
+
+				callback.visitDiffEntry(entry, el, to);
+			} catch (final Throwable t) {
+				LOGGER.warning("Failed fully executing callback for DiffEntry because "
+						+ ExceptionUtils.getFullStackTrace(t));
 			}
-
-			final EditList el = getEditList(entry);
-
-			callback.visitDiffEntry(entry, el, to);
 		}
 	}
-
 }
