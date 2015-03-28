@@ -26,6 +26,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 
 import com.google.common.collect.Lists;
@@ -181,10 +182,10 @@ public class EditListRetriever {
 	}
 
 	/**
-	 * Retrieve the edit list between the two commits.
+	 * Retrieve the edit list between the from and the to commit.
 	 *
-	 * @param to
-	 * @param from
+	 * @param to 
+	 * @param from the original revision or null to compare from an empty tree
 	 * @throws GitAPIException
 	 * @throws IOException
 	 * @throws LargeObjectException
@@ -195,10 +196,16 @@ public class EditListRetriever {
 			final RevCommit from, final IEditListCallback callback)
 			throws GitAPIException, IOException, LargeObjectException,
 			MissingObjectException, IncorrectObjectTypeException {
-		final List<DiffEntry> diffs = repository.diff()
+		final List<DiffEntry> diffs;
+		if (from != null) {
+			diffs= repository.diff()
 				.setNewTree(getTreeIterator(to.name()))
 				.setOldTree(getTreeIterator(from.name())).call();
-
+		} else {
+			diffs= repository.diff()
+					.setNewTree(getTreeIterator(to.name()))
+					.setOldTree(new EmptyTreeIterator()).call();
+		}
 		renameDetector.reset();
 		renameDetector.addAll(diffs);
 
